@@ -7,6 +7,10 @@ import jshint from 'gulp-jshint';
 import stylus from 'gulp-stylus';
 import jade from 'gulp-jade';
 import sourcemaps from 'gulp-sourcemaps';
+import imagemin from 'gulp-imagemin';
+import browserSync from 'browser-sync';
+
+const server = browserSync.create();
 
 // ----------------------------------
 // Configuration
@@ -34,6 +38,11 @@ const PATHS = {
     source: `${SOURCE}javascript/main.js`,
     watch: `${SOURCE}**/*.js`,
     destination: `${DESTINATION}scripts/`
+  },
+  images: {
+    source: `${SOURCE}assets/**/*`,
+    watch: `${SOURCE}assets/**/*`,
+    destination: `${DESTINATION}assets/`
   }
 };
 
@@ -66,19 +75,41 @@ gulp.task('styles', () => {
     .pipe(sourcemaps.init())
       .pipe(stylus())
     .pipe(sourcemaps.write())
-    .pipe(gulp.dest(PATHS.styles.destination));
+    .pipe(gulp.dest(PATHS.styles.destination))
+    .pipe(server.stream());
 });
 
 // ----------------------------------
-// Watch
+// Images Task
+// ----------------------------------
+gulp.task('images', () => {
+  return gulp.src(PATHS.images.source)
+    .pipe(imagemin())
+    .pipe(gulp.dest(PATHS.images.destination));
+});
+
+// ----------------------------------
+// Server Task
+// ----------------------------------
+gulp.task('serve', () => {
+  server.init({
+    server: {
+      baseDir: './build'
+    }
+  });
+});
+
+// ----------------------------------
+// Watch Task
 // ----------------------------------
 gulp.task('watch', () => {
-  gulp.watch(PATHS.scripts.source, ['scripts']);
-  gulp.watch(PATHS.styles.source, ['styles']);
-  gulp.watch(PATHS.templates.source, ['templates']);
+  gulp.watch(PATHS.scripts.watch, ['scripts']);
+  gulp.watch(PATHS.styles.watch, ['styles']);
+  gulp.watch(PATHS.templates.watch, ['templates']);
+  gulp.watch(PATHS.templates.watch).on('change', server.reload);
 });
 
 // ----------------------------------
 // Default Task
 // ----------------------------------
-gulp.task('default', ['watch']);
+gulp.task('default', ['watch', 'serve']);
